@@ -1,0 +1,163 @@
+{
+  "schema": "driving-shot/v1",
+  "scenario": "driving-line",
+  "track": {
+    "id": "fiction-ring-v1",
+    "name": "虚构环线（长直道 + 高速左弯）",
+    "width": 26,
+    "length": 467.8097245096171
+  },
+  "duration": 24,
+  "dt": 0.016666666666666666,
+  "cameraParams": {
+    "aspect": 1.7777777777777777,
+    "lookAheadDist": 12,
+    "deadZone": {
+      "x": 0.22,
+      "y": 0.16
+    },
+    "anchor": {
+      "x": 0,
+      "y": 0.1
+    },
+    "fovYDeg": 60,
+    "speedLeadTime": 0.35
+  },
+  "phases": [
+    {
+      "t": 0,
+      "kind": "accel",
+      "target": 30,
+      "label": "全油门沿长直道加速"
+    },
+    {
+      "t": 8.6,
+      "kind": "coast",
+      "target": 21,
+      "label": "松油门进入左弯前"
+    },
+    {
+      "t": 10.6,
+      "kind": "hold",
+      "target": 21,
+      "label": "高速过左弯"
+    },
+    {
+      "t": 16.2,
+      "kind": "accel",
+      "target": 27,
+      "label": "出弯加速"
+    },
+    {
+      "t": 17.4,
+      "kind": "brake",
+      "target": 0,
+      "label": "急刹"
+    },
+    {
+      "t": 19.2,
+      "kind": "reverse",
+      "target": -5,
+      "label": "倒车"
+    },
+    {
+      "t": 23.4,
+      "kind": "stop",
+      "target": 0,
+      "label": "停稳"
+    }
+  ],
+  "frames": [
+    {
+      "file": "shot_01_t4.78.png",
+      "t": 4.783333333333322,
+      "index": 287,
+      "targetKind": "lead"
+    },
+    {
+      "file": "shot_02_t10.78.png",
+      "t": 10.783333333333449,
+      "index": 647,
+      "targetKind": "lead"
+    },
+    {
+      "file": "shot_03_t17.27.png",
+      "t": 17.266666666666968,
+      "index": 1036,
+      "targetKind": "lead"
+    },
+    {
+      "file": "shot_04_t22.30.png",
+      "t": 22.300000000000015,
+      "index": 1338,
+      "targetKind": "subject"
+    }
+  ],
+  "map": "shot_map.png",
+  "metrics": {
+    "composition": {
+      "meanErr": 0.23673615891795613,
+      "maxErr": 0.3451189458753829,
+      "meanErrX": 0.15094726866708968,
+      "meanErrY": 0.14908400162639848,
+      "maxErrX": 0.31877890893486965,
+      "maxErrY": 0.1769774556312641
+    },
+    "subjectComposition": {
+      "meanErr": 0.14441885966303797,
+      "maxErr": 0.24909197712678227,
+      "maxErrX": 0.22069310219044028,
+      "maxErrY": 0.16872083633086787
+    },
+    "motion": {
+      "yawTravel": 1.4653197416164716,
+      "pitchTravel": 0.09297892327589032,
+      "maxYawRate": 0.2669283576700016,
+      "maxPitchRate": 0.045810271201802616
+    },
+    "leadRoom": {
+      "minAhead": 0.728815181786299,
+      "minSide": 0.8206868637241358
+    },
+    "rateLimit": {
+      "maxYawDeg": 150.00000000000003,
+      "maxPitchDeg": 90
+    },
+    "reverse": {
+      "frames": 287,
+      "share": 0.20441595441595442,
+      "maxYawRate": 0
+    },
+    "target": {
+      "leadFrames": 1117,
+      "subjectFrames": 287,
+      "maxLookAhead": 21.513260542082094
+    },
+    "deadZoneInside": 0.6830484330484331,
+    "samples": 1404
+  },
+  "verify": {
+    "samples": 1440,
+    "leadFrames": 1153,
+    "subjectFrames": 287,
+    "leadChordLow": 14.792656087135555,
+    "leadChordHigh": 21.10207678767169,
+    "leadChordGrows": true,
+    "reverseMaxYawRateDeg": 0,
+    "steadyReverseFrames": 252,
+    "leadBehindCameraFrames": 253,
+    "steadyReverseLeadBehind": true,
+    "subjectMaxErr": 0.24909197712678227,
+    "subjectMaxErrX": 0.18415007260590754,
+    "subjectMaxErrY": 0.16872083633086787,
+    "allSubjectInFront": true,
+    "maxLookAhead": 21.513260542082094,
+    "vmax": 27.180744405948847,
+    "vminLong": -5.20900499509338
+  },
+  "raw": {
+    "file": "raw.json",
+    "sha256": "c195dab64c115aca2a919daea05bf632117bfddf1d9ba1b97874237e29cbedce",
+    "frames": 1440
+  }
+}

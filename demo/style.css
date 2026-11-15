@@ -24,3 +24,15 @@ td:nth-child(even) { color: #e8ecf1; text-align: right; }
 #map { width: 100%; background: #16191e; border: 1px solid #262b33; }
 #exportBtn { margin-top: 8px; width: 100%; }
 .sectionTitle { margin-top: 6px; color: #8b93a1; }
+.hintText { margin: 6px 0 0; color: #8b93a1; }
+.checkRow { display: flex; align-items: center; gap: 6px; color: #aab2bf; }
+.checkRow input { accent-color: #e08f3c; }
+#assetBody { color: #aab2bf; margin-bottom: 6px; }
+#assetThumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+#assetThumbs figure { margin: 0; background: #101216; border: 1px solid #262b33; border-radius: 3px; overflow: hidden; }
+#assetThumbs img { display: block; width: 100%; }
+#assetThumbs figcaption { font-size: 11px; color: #8b93a1; padding: 2px 4px; }
+#loadSampleBtn, #replaySampleBtn { width: 100%; margin-top: 4px; }
+.alerts { margin: 8px 0 0; padding-left: 18px; color: #ef7a6f; }
+.alerts li.warn { color: #e0b23c; }
+.alerts li.ok { color: #7fd18b; }

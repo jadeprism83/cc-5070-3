@@ -9,6 +9,10 @@ export function summarize(rows, camera) {
   let sumE = 0, maxE = 0, sumEx = 0, sumEy = 0, maxEx = 0, maxEy = 0;
   let yawTravel = 0, pitchTravel = 0, maxYawRate = 0, maxPitchRate = 0;
   let minAhead = Infinity, minSide = Infinity, inside = 0;
+  // 主体投影（倒行构图目标的核验依据）与倒行模式统计
+  let sumSubj = 0, maxSubj = 0, maxSubjX = 0, maxSubjY = 0;
+  let reverseFrames = 0, reverseMaxRate = 0;
+  let leadFrames = 0, maxLookAhead = 0;
   for (const r of rs) {
     const ex = r.diag.ax - A.x;
     const ey = r.diag.ay - A.y;
@@ -19,6 +23,18 @@ export function summarize(rows, camera) {
     sumEy += Math.abs(ey);
     if (Math.abs(ex) > maxEx) maxEx = Math.abs(ex);
     if (Math.abs(ey) > maxEy) maxEy = Math.abs(ey);
+    maxLookAhead = Math.max(maxLookAhead, r.diag.lookAhead ?? 0);
+    if (r.diag.targetKind === 'subject') reverseFrames++;
+    else leadFrames++;
+    if (r.diag.subject) {
+      const sx = r.diag.subject.ax - A.x;
+      const sy = r.diag.subject.ay - A.y;
+      const se = Math.hypot(sx, sy);
+      sumSubj += se;
+      if (se > maxSubj) maxSubj = se;
+      if (Math.abs(sx) > maxSubjX) maxSubjX = Math.abs(sx);
+      if (Math.abs(sy) > maxSubjY) maxSubjY = Math.abs(sy);
+    }
     if (r.diag.dt > 0) {
       yawTravel += Math.abs(r.diag.dYaw);
       pitchTravel += Math.abs(r.diag.dPitch);
@@ -26,6 +42,7 @@ export function summarize(rows, camera) {
       const pr = Math.abs(r.diag.dPitch) / r.diag.dt;
       if (yr > maxYawRate) maxYawRate = yr;
       if (pr > maxPitchRate) maxPitchRate = pr;
+      if (r.diag.reverseMode && yr > reverseMaxRate) reverseMaxRate = yr;
     }
     if (r.diag.roomAhead < minAhead) minAhead = r.diag.roomAhead;
     if (r.diag.roomSide < minSide) minSide = r.diag.roomSide;
@@ -38,8 +55,19 @@ export function summarize(rows, camera) {
       meanErrX: sumEx / n, meanErrY: sumEy / n,
       maxErrX: maxEx, maxErrY: maxEy,
     },
+    subjectComposition: {
+      meanErr: sumSubj / n, maxErr: maxSubj,
+      maxErrX: maxSubjX, maxErrY: maxSubjY,
+    },
     motion: { yawTravel, pitchTravel, maxYawRate, maxPitchRate },
     leadRoom: { minAhead, minSide },
+    rateLimit: { maxYawDeg: camera.maxYawRate * 180 / Math.PI, maxPitchDeg: camera.maxPitchRate * 180 / Math.PI },
+    reverse: {
+      frames: reverseFrames,
+      share: reverseFrames / n,
+      maxYawRate: reverseMaxRate,
+    },
+    target: { leadFrames, subjectFrames: reverseFrames, maxLookAhead },
     deadZoneInside: inside / n,
     samples: n,
   };
@@ -55,5 +83,10 @@ export function formatMetrics(m) {
     `  最大角速度: 偏航=${d(m.motion.maxYawRate)}°/s  俯仰=${d(m.motion.maxPitchRate)}°/s`,
     `  前方留白            最小上方留白=${f(m.leadRoom.minAhead)}  最小侧向留白=${f(m.leadRoom.minSide)}` +
     `  死区内占比=${(m.deadZoneInside * 100).toFixed(0)}%`,
+    `  主体投影(构图核验)  平均|e|=${f(m.subjectComposition.meanErr)}  最大|e|=${f(m.subjectComposition.maxErr)}` +
+    `  最大ex=${f(m.subjectComposition.maxErrX)}  最大ey=${f(m.subjectComposition.maxErrY)}`,
+    `  构图目标与倒行      前瞻帧=${m.target.leadFrames}  主体帧=${m.target.subjectFrames}` +
+    `  倒行占比=${(m.reverse.share * 100).toFixed(0)}%  倒行最大偏航角速度=${d(m.reverse.maxYawRate)}°/s` +
+    `  前视距离峰值=${f(m.target.maxLookAhead)}m`,
   ].join('\n');
 }

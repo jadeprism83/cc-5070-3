@@ -3,8 +3,11 @@
 import { FollowCamera, predictLeadArc, predictLeadNaive } from '../src/followCamera.js';
 import { Vehicle } from '../src/vehicle.js';
 import { SCENARIOS, runScenario } from '../src/trajectories.js';
+import { buildTrack, FICTION_TRACK } from '../src/track.js';
+import { runShot, SHOT_DT } from '../src/drivingShot.js';
 import { summarize, formatMetrics } from '../src/metrics.js';
 import { wrapPi } from '../src/math3d.js';
+import fs from 'node:fs';
 
 const DEG = 180 / Math.PI;
 let failures = 0;
@@ -247,6 +250,86 @@ console.log('\n== 死区投影空间语义 ==');
   }));
   check('目标进入死区后不再旋转', maxRate < 0.75 / DEG, `尾部最大角速度=${f(maxRate * DEG, 2)}°/s`);
   check('尾部目标贴在死区边缘(溢出<0.01)', maxExcess < 0.01, `最大溢出=${f(maxExcess, 4)}`);
+}
+
+// ---------- 驾驶镜头：虚构赛道 + 倒行主体构图 ----------
+console.log('\n== 驾驶镜头: 虚构赛道（高速弯 + 急停 + 倒行） ==');
+{
+  const track = buildTrack(FICTION_TRACK);
+  const v = new Vehicle();
+  const cam = freshCam({ lookAheadDist: 12 });
+  const rows = runShot(v, cam, track, SHOT_DT);
+  const m = summarize(rows, cam);
+
+  const speeds = rows.map((r) => r.diag.speed);
+  const vmax = Math.max(...speeds);
+  const vminLong = Math.min(...rows.map((r) => r.diag.vLong));
+  check('驾驶镜头达到高速', vmax > 24, `vmax=${f(vmax, 1)}m/s`);
+  check('驾驶镜头真实倒车', vminLong < -4, `最小纵向速度=${f(vminLong, 2)}m/s`);
+
+  const rev = rows.filter((r) => r.diag.reverseMode);
+  check('倒行段切入主体构图', rev.length > 30 && rev.every((r) => r.diag.targetKind === 'subject'),
+    `倒行帧=${rev.length}`);
+  // 触发条件核验：稳定倒车（纵向速度 ≤ -3 m/s）时，按速度方向推的原始前瞻点
+  // 落到相机背后（leadBehindCamera，由镜头模块逐帧记录点乘结果）。
+  const steadyRev = rev.filter((r) => r.diag.vLong <= -3);
+  const behindCount = steadyRev.filter((r) => r.diag.leadBehindCamera).length;
+  check('稳定倒车时前瞻点落在相机背后（说明必须改瞄准主体）',
+    steadyRev.length > 0 && behindCount === steadyRev.length,
+    `${behindCount}/${steadyRev.length} 帧`);
+  check('前进段前瞻点始终在相机前方', rows.filter((r) => r.diag.targetKind === 'lead')
+    .every((r) => !r.diag.leadBehindCamera), '逐帧检查');
+  check('倒行主体始终在相机前方', rev.every((r) => !r.diag.subject.behind), `帧数=${rev.length}`);
+  check('倒行无镜头翻转(偏航角速度受限)',
+    Math.max(...rev.map((r) => Math.abs(r.diag.dYaw) / r.diag.dt)) <= cam.maxYawRate * 1.05,
+    `max=${f(m.reverse.maxYawRate * DEG, 1)}°/s`);
+  check('主体投影偏差受控', m.subjectComposition.maxErr < 0.6, `max|e|=${f(m.subjectComposition.maxErr)}`);
+  check('构图误差整体有界', m.composition.maxErr < 0.5, `max|e|=${f(m.composition.maxErr)}`);
+  check('后方倒行不引入镜头大回转', m.motion.yawTravel < Math.PI * 1.5,
+    `总偏航=${f(m.motion.yawTravel * DEG, 0)}°`);
+
+  // 前瞻距离核验：沿原始记录直接量弦长，高速应显著大于低速
+  const leadRows = rows.filter((r) => r.diag.targetKind === 'lead');
+  const chord = (r) => Math.hypot(r.lead[0] - r.veh.pos[0], r.lead[2] - r.veh.pos[2]);
+  const near = (s) => leadRows.reduce((a, b) => (Math.abs(b.diag.speed - s) < Math.abs(a.diag.speed - s) ? b : a));
+  const lo = chord(near(8)), hi = chord(near(26));
+  check('前瞻距离随速度伸展（原始记录弦长）', hi > lo + 3, `${f(lo, 2)}m → ${f(hi, 2)}m`);
+  check('前视距离与配置口径一致(带速度项)',
+    Math.abs(hi - (12 + 27 * 0.35)) < 4, `实测=${f(hi, 2)}m`);
+
+  // 急停段：纵向速度由高速穿过 0
+  const brakeRows = rows.filter((r) => r.ctrl.kind === 'brake');
+  const crossedZero = brakeRows.some((r) => Math.abs(r.diag.vLong) < 1);
+  check('急停段确实把速度刹到近零', crossedZero && brakeRows.length > 20, `急停帧=${brakeRows.length}`);
+}
+
+// ---------- 旧样例回归：新模块必须让旧记录逐帧复现 ----------
+console.log('\n== 旧样例回归（results/*.json 逐帧复现） ==');
+for (const key of ['accel', 'curve', 'sideslip']) {
+  const file = new URL(`../results/${key}.json`, import.meta.url);
+  if (!fs.existsSync(file)) {
+    check(`${key} 旧样例存在`, false, 'results 记录缺失');
+    continue;
+  }
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const cam = freshCam({ lookAheadDist: data.lookAheadDist });
+  let maxPos = 0, maxYaw = 0, maxPitch = 0;
+  let replayRows = 0;
+  for (const r of data.rows) {
+    const out = cam.update(r.dt, {
+      position: r.veh.pos, velocity: r.veh.vel, yawRate: r.veh.yawRate,
+      forward: [Math.sin(r.veh.yaw), 0, Math.cos(r.veh.yaw)],
+    });
+    maxPos = Math.max(maxPos, Math.hypot(
+      out.position[0] - r.cam.pos[0], out.position[1] - r.cam.pos[1], out.position[2] - r.cam.pos[2]));
+    maxYaw = Math.max(maxYaw, Math.abs(wrapPi(out.yaw - r.cam.yaw)));
+    maxPitch = Math.max(maxPitch, Math.abs(out.pitch - r.cam.pitch));
+    replayRows++;
+  }
+  check(`${key} 旧样例完整重放`, replayRows === data.rows.length && replayRows > 0, `帧数=${replayRows}`);
+  check(`${key} 旧样例位姿逐帧一致`,
+    maxPos < 1e-9 && maxYaw < 1e-9 && maxPitch < 1e-9,
+    `位置=${maxPos.toExponential(2)}m 偏航=${f(maxYaw * DEG, 9)}° 俯仰=${f(maxPitch * DEG, 9)}°`);
 }
 
 console.log(`\n${failures === 0 ? '全部通过' : `失败 ${failures} 项`}`);

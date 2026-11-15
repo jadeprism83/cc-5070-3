@@ -7,6 +7,9 @@
     "demo": "node tools/serve.js",
     "test": "node tests/run.js",
     "cli": "node tools/cli.js",
-    "record": "node tools/cli.js all --save"
+    "record": "node tools/cli.js all --save",
+    "shot:build": "node tools/buildDrivingShot.js",
+    "shot:check": "node tools/checkDrivingShot.js",
+    "shot:replay": "node samples/driving-line/replayDrivingShot.js"
   }
 }
