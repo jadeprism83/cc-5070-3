@@ -1,0 +1,26 @@
+html, body { margin: 0; height: 100%; background: #101216; color: #cfd4dc; font: 13px/1.5 "SF Mono", Consolas, "Courier New", monospace; }
+#app { display: flex; height: 100vh; }
+#viewWrap { position: relative; flex: 1; min-width: 0; }
+#view, #hud { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#hud { pointer-events: none; }
+#hint { position: absolute; left: 10px; bottom: 8px; color: #8b93a1; background: rgba(16,18,22,.55); padding: 2px 8px; border-radius: 4px; }
+#panel { width: 360px; overflow-y: auto; padding: 10px 14px 20px; background: #15181d; border-left: 1px solid #262b33; box-sizing: border-box; }
+h1 { font-size: 15px; margin: 4px 0 10px; color: #e8ecf1; }
+h2 { font-size: 12px; margin: 14px 0 6px; color: #8b93a1; font-weight: normal; border-bottom: 1px solid #262b33; padding-bottom: 3px; }
+label { display: block; margin: 6px 0 2px; color: #aab2bf; }
+output { color: #ffd479; }
+input[type=range] { width: 100%; accent-color: #e08f3c; }
+#btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+button { background: #232830; color: #cfd4dc; border: 1px solid #333a44; border-radius: 4px; padding: 6px 4px; cursor: pointer; font: inherit; }
+button:hover { background: #2c333d; }
+button.on { background: #37424f; border-color: #e08f3c; color: #ffd479; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 2px 4px; border-bottom: 1px solid #20252c; }
+td:nth-child(odd) { color: #8b93a1; }
+td:nth-child(even) { color: #e8ecf1; text-align: right; }
+#summaryBody table td:nth-child(even) { text-align: left; }
+.good { color: #7fd18b; }
+.bad { color: #ef7a6f; }
+#map { width: 100%; background: #16191e; border: 1px solid #262b33; }
+#exportBtn { margin-top: 8px; width: 100%; }
+.sectionTitle { margin-top: 6px; color: #8b93a1; }

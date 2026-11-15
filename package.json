@@ -1,0 +1,12 @@
+{
+  "name": "vehicle-follow-camera",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "高速载具跟随构图镜头：投影空间死区 + 路径前瞻 + 受限旋转",
+  "scripts": {
+    "demo": "node tools/serve.js",
+    "test": "node tests/run.js",
+    "cli": "node tools/cli.js",
+    "record": "node tools/cli.js all --save"
+  }
+}
